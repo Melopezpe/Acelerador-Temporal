@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acelerador Temporal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.7; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.7; }
+        }
+        
+        .pulse-animation {
+            animation: pulse 0.5s infinite;
+        }
+        
+        .fast-ticking {
+            animation: tick 0.3s infinite;
+        }
+        
+        @keyframes tick {
+            0% { transform: rotate(0deg); }
+            25% { transform: rotate(5deg); }
+            50% { transform: rotate(0deg); }
+            75% { transform: rotate(-5deg); }
+            100% { transform: rotate(0deg); }
+        }
+        
+        .breathing-circle {
+            transition: all 0.3s ease;
+        }
+        
+        .time-display {
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+        }
+        
+        .clock-face {
+            background: radial-gradient(circle, #1a1a2e 0%, #16213e 100%);
+        }
+        
+        .hour-hand, .minute-hand, .second-hand {
+            transform-origin: bottom center;
+            transition: transform 0.05s linear;
+        }
+        
+        @keyframes breathing {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+        
+        .breathing-animation {
+            animation: breathing var(--breath-speed) infinite ease-in-out;
+        }
+        
+        .clock-mark {
+            position: absolute;
+            width: 2px;
+            height: 10px;
+            background: white;
+            transform-origin: bottom center;
+        }
+        
+        .hour-mark {
+            height: 15px;
+            background: #fff;
+            width: 3px;
+        }
+        
+        .minute-mark {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.6);
+            width: 1px;
+        }
+        
+        .hour-number {
+            position: absolute;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+            transform-origin: center;
+            text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
+    <div class="max-w-md w-full bg-gray-800 rounded-xl shadow-2xl overflow-hidden">
+        <div class="bg-indigo-900 p-6 text-center">
+            <h1 class="text-3xl font-bold">Acelerador Temporal</h1>
+            <p class="mt-2 text-indigo-200">Altera tu percepción del tiempo</p>
+        </div>
+        
+        <div class="p-6">
+            <div class="clock-face rounded-full mx-auto w-64 h-64 relative mb-8 shadow-lg">
+                <!-- Marcas de horas y minutos -->
+                <!-- Las marcas se generarán dinámicamente con JavaScript -->
+                
+                <!-- Manecillas -->
+                <div class="hour-hand absolute top-1/2 left-1/2 w-1 h-16 bg-white transform -translate-x-1/2 -translate-y-full origin-bottom"></div>
+                <div class="minute-hand absolute top-1/2 left-1/2 w-1 h-24 bg-blue-400 transform -translate-x-1/2 -translate-y-full origin-bottom"></div>
+                <div class="second-hand absolute top-1/2 left-1/2 w-0.5 h-28 bg-red-500 transform -translate-x-1/2 -translate-y-full origin-bottom"></div>
+                
+                <!-- Centro del reloj -->
+                <div class="absolute top-1/2 left-1/2 w-4 h-4 bg-white rounded-full transform -translate-x-1/2 -translate-y-1/2"></div>
+            </div>
+            
+            <div class="time-display text-center text-4xl font-mono mb-6">
+                <span id="hours">00</span>:<span id="minutes">00</span>:<span id="seconds">00</span>
+                <span class="text-xl ml-2" id="ampm">AM</span>
+            </div>
+            
+            <div class="flex justify-center mb-8">
+                <div class="breathing-circle w-16 h-16 bg-teal-500 rounded-full flex items-center justify-center text-white text-xl breathing-animation" 
+                     id="breathing-circle" style="--breath-speed: 4s">
+                    <i class="fas fa-wind"></i>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <label for="speed-control" class="block text-sm font-medium mb-2">Velocidad temporal: <span id="speed-value">1</span>x</label>
+                <input type="range" id="speed-control" min="1" max="20" value="1" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                <div class="flex justify-between text-xs text-gray-400 mt-1">
+                    <span>Lento</span>
+                    <span>Normal</span>
+                    <span>Rápido</span>
+                    <span>Muy rápido</span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <button id="start-btn" class="bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center">
+                    <i class="fas fa-play mr-2"></i> Iniciar
+                </button>
+                <button id="reset-btn" class="bg-gray-600 hover:bg-gray-700 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center">
+                    <i class="fas fa-redo mr-2"></i> Reiniciar
+                </button>
+            </div>
+            
+            <div class="mt-6 bg-gray-700 p-4 rounded-lg">
+                <h3 class="font-medium mb-2 text-yellow-400 flex items-center">
+                    <i class="fas fa-lightbulb mr-2"></i> Instrucciones:
+                </h3>
+                <ol class="list-decimal list-inside text-sm space-y-1">
+                    <li>Ajusta la velocidad con el control deslizante.</li>
+                    <li>Presiona "Iniciar" para comenzar la experiencia.</li>
+                    <li>Concéntrate en el círculo de respiración.</li>
+                    <li>Observa cómo el tiempo se acelera en el reloj.</li>
+                    <li>Respira al ritmo del pulso para mayor efecto.</li>
+                    <li>Haz clic en "reiniciar" para empezar de nuevo.</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-8 text-center text-gray-400 text-sm">
+        <p>Esta herramienta es una simulación visual para acelerar tu percepción del tiempo.</p>
+        <p class="mt-1">El círculo de respiración se sincroniza con la velocidad temporal seleccionada.</p>
+        <p class="mt-1">Cuando el tiempo parece moverse más rápido, tienes menos tiempo para dudar y más para actuar. Esto puede llevar a decisiones más rápidas y efectivas, ya que no te quedas atascado en la indecisión.</p>
+        <p class="mt-1">Sin embargo, es importante asegurarse de que las decisiones tomadas rápidamente aún sean bien pensadas y consideradas.</p>
+        <br>
+        <p><b>© 2025 Autor: Martín López. Acelerador Temporal. Todos los derechos reservados.</b></p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const startBtn = document.getElementById('start-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const speedControl = document.getElementById('speed-control');
+            const speedValue = document.getElementById('speed-value');
+            const breathingCircle = document.getElementById('breathing-circle');
+            const hoursDisplay = document.getElementById('hours');
+            const minutesDisplay = document.getElementById('minutes');
+            const secondsDisplay = document.getElementById('seconds');
+            const ampmDisplay = document.getElementById('ampm');
+            const clockFace = document.querySelector('.clock-face');
+            
+            const hourHand = document.querySelector('.hour-hand');
+            const minuteHand = document.querySelector('.minute-hand');
+            const secondHand = document.querySelector('.second-hand');
+            
+            let speed = 1;
+            let isRunning = false;
+            let interval;
+            let currentTime = new Date();
+            
+            // Crear marcas del reloj
+            function createClockMarks() {
+                const radius = 120; // Radio del reloj
+                const center = 128; // Centro del reloj (128px para un reloj de 256px)
+                
+                // Crear marcas de minutos (60 marcas, una por minuto)
+                for (let i = 0; i < 60; i++) {
+                    const angle = (i * 6) * (Math.PI / 180); // 6 grados por minuto
+                    const markType = i % 5 === 0 ? 'hour-mark' : 'minute-mark'; // Marcas más grandes cada 5 minutos
+                    const length = i % 5 === 0 ? 15 : 8;
+                    
+                    const x = center + Math.sin(angle) * (radius - 10);
+                    const y = center - Math.cos(angle) * (radius - 10);
+                    
+                    const mark = document.createElement('div');
+                    mark.className = `clock-mark ${markType}`;
+                    mark.style.left = `${x}px`;
+                    mark.style.top = `${y}px`;
+                    mark.style.transform = `rotate(${i * 6}deg) translate(-50%, -50%)`;
+                    
+                    clockFace.appendChild(mark);
+                }
+                
+                // Crear números de horas (12 números)
+                const hourNumbers = [12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+                for (let i = 0; i < 12; i++) {
+                    const angle = (i * 30) * (Math.PI / 180); // 30 grados por hora
+                    const x = center + Math.sin(angle) * (radius - 30);
+                    const y = center - Math.cos(angle) * (radius - 30);
+                    
+                    const number = document.createElement('div');
+                    number.className = 'hour-number';
+                    number.textContent = hourNumbers[i];
+                    number.style.left = `${x}px`;
+                    number.style.top = `${y}px`;
+                    number.style.transform = `translate(-50%, -50%)`;
+                    
+                    clockFace.appendChild(number);
+                }
+            }
+            
+            // Llamar a la función para crear las marcas del reloj
+            createClockMarks();
+            
+            // Función para calcular la velocidad de respiración basada en la velocidad temporal
+            function calculateBreathSpeed(speed) {
+                // Velocidad normal (1x) = 4 segundos por ciclo de respiración
+                // Velocidad máxima (20x) = 0.5 segundos por ciclo de respiración
+                const minSpeed = 0.5;
+                const maxSpeed = 4;
+                return maxSpeed - ((speed - 1) * (maxSpeed - minSpeed) / 19);
+            }
+            
+            // Actualizar el reloj
+            function updateClock() {
+                currentTime = new Date(currentTime.getTime() + 1000 * speed);
+                
+                let hours = currentTime.getHours();
+                let minutes = currentTime.getMinutes();
+                let seconds = currentTime.getSeconds();
+                let ampm = hours >= 12 ? 'PM' : 'AM';
+                
+                // Formato 12 horas
+                hours = hours % 12;
+                hours = hours ? hours : 12;
+                
+                hoursDisplay.textContent = hours.toString().padStart(2, '0');
+                minutesDisplay.textContent = minutes.toString().padStart(2, '0');
+                secondsDisplay.textContent = seconds.toString().padStart(2, '0');
+                ampmDisplay.textContent = ampm;
+                
+                // Rotación de las manecillas
+                const hourDeg = (hours * 30) + (minutes * 0.5);
+                const minuteDeg = minutes * 6;
+                const secondDeg = seconds * 6;
+                
+                hourHand.style.transform = `translate(-50%, -100%) rotate(${hourDeg}deg)`;
+                minuteHand.style.transform = `translate(-50%, -100%) rotate(${minuteDeg}deg)`;
+                secondHand.style.transform = `translate(-50%, -100%) rotate(${secondDeg}deg)`;
+                
+                // Cambiar color según la velocidad
+                if (speed > 15) {
+                    breathingCircle.classList.remove('bg-teal-500', 'bg-blue-500', 'bg-purple-500');
+                    breathingCircle.classList.add('bg-red-500');
+                } else if (speed > 10) {
+                    breathingCircle.classList.remove('bg-teal-500', 'bg-blue-500', 'bg-red-500');
+                    breathingCircle.classList.add('bg-purple-500');
+                } else if (speed > 5) {
+                    breathingCircle.classList.remove('bg-teal-500', 'bg-purple-500', 'bg-red-500');
+                    breathingCircle.classList.add('bg-blue-500');
+                } else {
+                    breathingCircle.classList.remove('bg-blue-500', 'bg-purple-500', 'bg-red-500');
+                    breathingCircle.classList.add('bg-teal-500');
+                }
+            }
+            
+            // Control de velocidad
+            speedControl.addEventListener('input', function() {
+                speed = parseInt(this.value);
+                speedValue.textContent = speed;
+                
+                // Actualizar velocidad de respiración
+                const breathSpeed = calculateBreathSpeed(speed);
+                breathingCircle.style.setProperty('--breath-speed', breathSpeed + 's');
+                
+                if (isRunning) {
+                    clearInterval(interval);
+                    interval = setInterval(updateClock, 1000 / speed);
+                }
+            });
+            
+            // Iniciar
+            startBtn.addEventListener('click', function() {
+                if (!isRunning) {
+                    isRunning = true;
+                    currentTime = new Date();
+                    interval = setInterval(updateClock, 1000 / speed);
+                    startBtn.innerHTML = '<i class="fas fa-pause mr-2"></i> Pausar';
+                    startBtn.classList.remove('bg-green-600', 'hover:bg-green-700');
+                    startBtn.classList.add('bg-yellow-600', 'hover:bg-yellow-700');
+                    
+                    // Asegurarse de que la animación de respiración esté activa
+                    breathingCircle.classList.add('breathing-animation');
+                } else {
+                    isRunning = false;
+                    clearInterval(interval);
+                    startBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Continuar';
+                    startBtn.classList.remove('bg-yellow-600', 'hover:bg-yellow-700');
+                    startBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                }
+            });
+            
+            // Reiniciar
+            resetBtn.addEventListener('click', function() {
+                isRunning = false;
+                clearInterval(interval);
+                currentTime = new Date();
+                updateClock();
+                speedControl.value = 1;
+                speed = 1;
+                speedValue.textContent = '1';
+                startBtn.innerHTML = '<i class="fas fa-play mr-2"></i> Iniciar';
+                startBtn.classList.remove('bg-yellow-600', 'hover:bg-yellow-700');
+                startBtn.classList.add('bg-green-600', 'hover:bg-green-700');
+                
+                // Restablecer velocidad de respiración
+                const breathSpeed = calculateBreathSpeed(1);
+                breathingCircle.style.setProperty('--breath-speed', breathSpeed + 's');
+                breathingCircle.classList.remove('bg-blue-500', 'bg-purple-500', 'bg-red-500');
+                breathingCircle.classList.add('bg-teal-500');
+                
+                // Mantener la animación de respiración
+                breathingCircle.classList.add('breathing-animation');
+            });
+            
+            // Inicializar
+            updateClock();
+        });
+    </script>
+</body>
+</html>
